@@ -3,7 +3,7 @@
     <button class="btn btn-primary" @click="newReplacement">Replace...</button>
     <ol class="mt-3">
       <li v-for="replacement in replacements" :key="replacement.id">
-        <ReplacementDetail :replacement="replacement" @remove="removeReplacement" />
+        <ReplacementDetail :replacement="replacement" @remove="removeReplacement" @applied="applied" />
       </li>
     </ol>
   </div>
@@ -37,6 +37,19 @@ export default {
     },
     removeReplacement (replacement) {
       this.replacements.splice(this.replacements.indexOf(replacement), 1);
+    },
+    applied (replacement) {
+      // find other possibilities
+      const root = document.querySelector('#content-root');
+      for (const range of replacement.find(root)) {
+        this.replacements.push(
+          new Replacement(
+            range.toString(),
+            replacement.newText,
+            rangeToTarget(range, root)
+          )
+        );
+      }
     }
   }
 }

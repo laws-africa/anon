@@ -11,7 +11,7 @@
 import { getTextNodes } from "@lawsafrica/indigo-akn/dist/ranges";
 
 export default {
-  emits: ['remove'],
+  emits: ['remove', 'applied'],
   props: {
     replacement: Object,
   },
@@ -28,6 +28,7 @@ export default {
       const contentRoot = document.querySelector('#content-root');
       this.replacement.apply(contentRoot);
       this.mark();
+      this.$emit('applied', this.replacement);
     },
     discard() {
       const contentRoot = document.querySelector('#content-root');
