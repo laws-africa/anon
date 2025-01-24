@@ -8,17 +8,21 @@ export class Replacement {
   }
 
   apply (root) {
-    const range = targetToRange(this.target, root);
+    const range = this.toRange(root);
     if (range) {
       this.target = rangeToTarget(this.replaceWithText(range, this.newText), root);
     }
   }
 
   unapply (root) {
-    const range = targetToRange(this.target, root);
+    const range = this.toRange(root);
     if (range) {
       this.target = rangeToTarget(this.replaceWithText(range, this.oldText), root);
     }
+  }
+
+  toRange (root) {
+    return targetToRange(this.target, root);
   }
 
   replaceWithText(range, text) {
