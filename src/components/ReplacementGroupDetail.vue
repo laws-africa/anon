@@ -6,7 +6,13 @@
     </h6>
     <ul class="list-group list-group-flush replacement-group-items">
       <template v-for="replacement of group.replacements" :key="replacement.id" class="list-group-item">
-        <ReplacementDetail :replacement="replacement" @remove="removed" @applied="applied" />
+        <ReplacementDetail
+          :replacement="replacement"
+          :active="replacement === modelValue"
+          @remove="removed"
+          @applied="applied"
+          @activated="$emit('update:modelValue', replacement)"
+        />
       </template>
     </ul>
   </div>
@@ -16,7 +22,7 @@
 import ReplacementDetail from "@/components/ReplacementDetail.vue";
 
 export default {
-  props: ['group'],
+  props: ['group', 'modelValue'],
   components: { ReplacementDetail },
   emits: ['remove', 'applied'],
   methods: {

@@ -12,13 +12,10 @@
 <script>
 export default {
   emits: ['remove', 'applied'],
-  props: {
-    replacement: Object,
-  },
+  props: ['replacement', 'active'],
   data (self) {
     return {
       newText: self.replacement.newText,
-      active: false,
     };
   },
   mounted () {
@@ -29,7 +26,10 @@ export default {
       return !this.replacement.applied || this.newText !== this.replacement.newText;
     },
     classes () {
-      return this.active ? 'active' : '';
+      const classes = [];
+      if (this.replacement.applied) classes.push('applied');
+      if (this.active) classes.push('is-active');
+      return classes.join(' ');
     }
   },
   methods: {
@@ -53,23 +53,22 @@ export default {
       }
     },
     markClicked() {
-      this.active = true;
       this.activateMarks();
-      this.$el.scrollIntoView();
+      this.$el.scrollIntoView({ behavior: "smooth" });
+      this.$emit('activated', this.replacement);
     },
     clicked () {
-      this.active = true;
       this.activateMarks();
       this.replacement.marks[0].scrollIntoView({ behavior: "smooth" });
-      this.$emit('activated', this);
+      this.$emit('activated', this.replacement);
     },
     activateMarks() {
       // a mark was clicked, activate this replacement
-      for (const mark of this.getContentRoot().querySelectorAll('mark.active')) {
-        mark.classList.remove('active');
+      for (const mark of this.getContentRoot().querySelectorAll('mark.is-active')) {
+        mark.classList.remove('is-active');
       }
       for (const mark of this.replacement.marks) {
-        mark.classList.add('active');
+        mark.classList.add('is-active');
       }
     },
     getContentRoot () {

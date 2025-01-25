@@ -2,7 +2,12 @@
   <div>
     <button class="btn btn-primary" @click="newReplacement">Replace...</button>
     <div v-for="group in replacementGroups" :key="group.key" class="mt-3">
-      <ReplacementGroupDetail :group="group" @applied="applied" @remove="remove" />
+      <ReplacementGroupDetail
+        :group="group"
+        @applied="applied"
+        @remove="remove"
+        v-model="activeReplacement"
+      />
     </div>
   </div>
 </template>
@@ -16,6 +21,11 @@ export default {
   components: {ReplacementGroupDetail},
   props: {
     replacements: Array,
+  },
+  data() {
+    return {
+      activeReplacement: null,
+    };
   },
   computed: {
     replacementGroups() {

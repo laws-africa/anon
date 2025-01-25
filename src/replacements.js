@@ -54,7 +54,7 @@ export class Replacement {
         let mark = textNode.ownerDocument.createElement('mark');
         textNode.parentElement.insertBefore(mark, textNode);
         mark.appendChild(textNode);
-        mark.classList.toggle('mark-applied', this.applied);
+        mark.classList.toggle('applied', this.applied);
         mark._replacement = this;
         this.marks.push(mark);
       }
