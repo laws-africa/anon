@@ -1,16 +1,20 @@
 import {rangeToTarget, targetToRange} from "@lawsafrica/indigo-akn/dist/ranges";
+import { getTextNodes } from "@lawsafrica/indigo-akn/dist/ranges";
 
 export class Replacement {
   constructor (oldText, newText, target) {
     this.oldText = oldText;
     this.newText = newText;
     this.target = target;
+    this.applied = false;
+    this.marks = [];
   }
 
   apply (root) {
     const range = this.toRange(root);
     if (range) {
       this.target = rangeToTarget(this.replaceWithText(range, this.newText), root);
+      this.applied = true;
     }
   }
 
@@ -18,6 +22,7 @@ export class Replacement {
     const range = this.toRange(root);
     if (range) {
       this.target = rangeToTarget(this.replaceWithText(range, this.oldText), root);
+      this.applied = false;
     }
   }
 
@@ -35,6 +40,32 @@ export class Replacement {
     newRange.setEndAfter(node);
 
     return newRange;
+  }
+
+  mark (contentRoot) {
+    this.unmark(contentRoot);
+
+    const range = this.toRange(contentRoot);
+
+    for (const textNode of getTextNodes(range)) {
+      if (textNode.parentElement) {
+        let mark = textNode.ownerDocument.createElement('mark');
+        textNode.parentElement.insertBefore(mark, textNode);
+        mark.appendChild(textNode);
+        this.marks.push(mark);
+      }
+    }
+  }
+
+  unmark () {
+    for (const mark of this.marks) {
+      const parent = mark.parentElement;
+      while (parent && mark.firstChild) {
+        parent.insertBefore(mark.firstChild, mark);
+      }
+      mark.remove();
+    }
+    this.marks = [];
   }
 
   /**
@@ -68,5 +99,28 @@ export class Replacement {
     }
 
     return matches;
+  }
+
+  snippet () {
+    const sel = this.target.selectors.find((s) => s.type === 'TextQuoteSelector');
+    const len = 15;
+
+    if (sel) {
+      return `... ${sel.prefix.slice(-len)}<mark>${sel.exact}</mark>${sel.suffix.slice(0, len)} ...`;
+    } else {
+      return this.oldtext;
+    }
+  }
+
+  grouping () {
+    return this.oldText + " -> " + this.newText;
+  }
+}
+
+export class ReplacementGroup {
+  constructor (replacements) {
+    this.key = replacements[0].grouping();
+    this.title = this.key;
+    this.replacements = replacements;
   }
 }

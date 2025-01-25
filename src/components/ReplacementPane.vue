@@ -1,23 +1,34 @@
 <template>
   <div>
     <button class="btn btn-primary" @click="newReplacement">Replace...</button>
-    <ol class="mt-3">
-      <li v-for="replacement in replacements" :key="replacement.id">
-        <ReplacementDetail :replacement="replacement" @remove="removeReplacement" @applied="applied" />
-      </li>
-    </ol>
+    <div v-for="group in replacementGroups" :key="group.key" class="mt-3">
+      <ReplacementGroupDetail :group="group" @applied="applied" @remove="remove" />
+    </div>
   </div>
 </template>
 
 <script>
-import { Replacement } from "@/replacements.js";
+import { Replacement, ReplacementGroup } from "@/replacements.js";
 import { rangeToTarget } from "@lawsafrica/indigo-akn/dist/ranges";
-import ReplacementDetail from "@/components/ReplacementDetail.vue";
+import ReplacementGroupDetail from "@/components/ReplacementGroupDetail.vue";
 
 export default {
-  components: {ReplacementDetail},
+  components: {ReplacementGroupDetail},
   props: {
     replacements: Array,
+  },
+  computed: {
+    replacementGroups() {
+      const groups = {};
+      for (const replacement of this.replacements) {
+        if (!(replacement.grouping() in groups)) {
+          groups[replacement.grouping()] = [];
+        }
+        groups[replacement.grouping()].push(replacement);
+      }
+
+      return Object.values(groups).map((replacements) => new ReplacementGroup(replacements));
+    }
   },
   methods: {
     newReplacement() {
@@ -35,7 +46,7 @@ export default {
         }
       }
     },
-    removeReplacement (replacement) {
+    remove (replacement) {
       this.replacements.splice(this.replacements.indexOf(replacement), 1);
     },
     applied (replacement) {
