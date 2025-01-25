@@ -19,10 +19,12 @@ export class Replacement {
   }
 
   unapply (root) {
-    const range = this.toRange(root);
-    if (range) {
-      this.target = rangeToTarget(this.replaceWithText(range, this.oldText), root);
-      this.applied = false;
+    if (this.applied) {
+      const range = this.toRange(root);
+      if (range) {
+        this.target = rangeToTarget(this.replaceWithText(range, this.oldText), root);
+        this.applied = false;
+      }
     }
   }
 
@@ -52,6 +54,8 @@ export class Replacement {
         let mark = textNode.ownerDocument.createElement('mark');
         textNode.parentElement.insertBefore(mark, textNode);
         mark.appendChild(textNode);
+        mark.classList.toggle('mark-applied', this.applied);
+        mark._replacement = this;
         this.marks.push(mark);
       }
     }

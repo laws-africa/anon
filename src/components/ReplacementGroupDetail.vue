@@ -5,9 +5,9 @@
       <span class="ms-2 badge text-bg-secondary">{{group.replacements.length}}</span>
     </h6>
     <ul class="list-group list-group-flush replacement-group-items">
-      <li v-for="replacement of group.replacements" :key="replacement.id" class="list-group-item">
+      <template v-for="replacement of group.replacements" :key="replacement.id" class="list-group-item">
         <ReplacementDetail :replacement="replacement" @remove="removed" @applied="applied" />
-      </li>
+      </template>
     </ul>
   </div>
 </template>
