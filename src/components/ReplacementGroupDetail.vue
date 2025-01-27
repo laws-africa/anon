@@ -1,14 +1,16 @@
 <template>
   <div class="card">
     <div class="card-header d-flex">
-      <h6>
+      <h6 @click="toggle">
+        <span v-if="collapsed" class="toggle">▶</span>
+        <span v-if="!collapsed" class="toggle">▼</span>
         {{ group.title }}
-        <span class="ms-2 badge text-bg-secondary">{{group.replacements.length}} / {{group.replacements.length + group.suggestions.length}}</span>
+        <span class="ms-2 badge text-bg-secondary">{{nApplied}} / {{group.replacements.length + group.suggestions.length}}</span>
       </h6>
       <button class="btn btn-success ms-auto" @click="apply" :disabled="!canApply" title="Apply"><i class="bi bi-check"></i></button>
       <button class="btn btn-success ms-2" @click="unapply" :disabled="!canUnapply" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
     </div>
-    <ul class="list-group list-group-flush replacement-group-items">
+    <ul :class="`list-group list-group-flush replacement-group-items ${collapsed ? 'd-none' : ''}`">
       <template v-for="replacement of group.replacements" :key="replacement.id">
         <ReplacementDetail
           :replacement="replacement"
@@ -38,28 +40,36 @@ export default {
   props: ['group', 'modelValue'],
   components: { ReplacementDetail },
   emits: ['remove', 'applied', 'unapplied'],
+  data () {
+    return {
+      collapsed: false,
+    };
+  },
   computed: {
     canApply () {
-      return this.group.replacements.some(r => !r.applied);
+      return this.group.replacements.some(r => !r.applied) || this.group.suggestions.length > 0;
     },
     canUnapply () {
       return this.group.replacements.some(r => r.applied);
+    },
+    nApplied () {
+      return this.group.replacements.filter(r => r.applied).length;
     }
   },
   methods: {
     apply () {
-      for (const replacement of this.group.replacements) {
+      const replacements = this.group.replacements.concat(this.group.suggestions);
+      for (const replacement of replacements) {
         replacement.apply();
-        this.$emit('applied', replacement);
-      }
-      for (const replacement of this.group.suggestions) {
-        replacement.apply();
+        replacement.mark();
         this.$emit('applied', replacement);
       }
     },
     unapply () {
-      for (const replacement of this.group.replacements) {
+      const replacements = this.group.replacements.concat(this.group.suggestions);
+      for (const replacement of replacements) {
         replacement.unapply();
+        replacement.mark();
         this.$emit('unapplied', replacement);
       }
     },
@@ -68,6 +78,9 @@ export default {
     },
     removed (replacement) {
       this.$emit('remove', replacement);
+    },
+    toggle () {
+      this.collapsed = !this.collapsed;
     }
   }
 }
@@ -77,5 +90,9 @@ export default {
 .replacement-group-items {
   max-height: 50vh;
   overflow-y: auto;
+}
+
+.toggle {
+  cursor: pointer;
 }
 </style>

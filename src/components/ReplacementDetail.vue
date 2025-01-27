@@ -20,7 +20,7 @@ export default {
     };
   },
   mounted () {
-    this.mark();
+    this.replacement.mark();
   },
   computed: {
     dirty () {
@@ -33,30 +33,31 @@ export default {
       return classes.join(' ');
     }
   },
+  watch: {
+    'replacement.marks': function () {
+      for (const mark of this.replacement.marks) {
+        mark.addEventListener('click', () => {
+          this.markClicked();
+        });
+      }
+    }
+  },
   methods: {
     apply() {
       this.replacement.newText = this.newText;
       this.replacement.apply();
-      this.mark();
+      this.replacement.mark();
       this.$emit('applied', this.replacement);
     },
     unapply() {
       this.replacement.unapply();
-      this.mark();
+      this.replacement.mark();
       this.$emit('unapplied', this.replacement);
     },
     discard() {
       this.replacement.unmark();
       this.replacement.unapply();
       this.$emit('remove', this.replacement);
-    },
-    mark() {
-      this.replacement.mark();
-      for (const mark of this.replacement.marks) {
-        mark.addEventListener('click', () => {
-          this.markClicked();
-        });
-      }
     },
     markClicked() {
       this.activateMarks();

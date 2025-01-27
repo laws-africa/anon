@@ -6,7 +6,7 @@
     <div class="content-pane">
       <ContentPane />
     </div>
-    <div class="sidebar-pane bg-light">
+    <div class="sidebar-pane border-start">
       <ReplacementPane :replacements="replacements" />
     </div>
   </div>

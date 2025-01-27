@@ -40,8 +40,11 @@ export default {
           range.toString();
 
           const replacement = new Replacement(contentRoot, range.toString(), range.toString(), rangeToTarget(range, contentRoot));
+          // ensure there are marks before new suggestions are searched
+          replacement.mark();
           this.replacements.push(replacement);
           this.updateGroups();
+          this.activeReplacement = replacement;
         }
       }
     },
