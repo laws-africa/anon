@@ -1,11 +1,11 @@
 <template>
   <div>
     <button class="btn btn-primary" @click="newReplacement">Replace...</button>
-    <div v-for="group in replacementGroups" :key="group.key" class="mt-3">
+    <div v-for="group of groups.values()" :key="group.key" class="mt-3">
       <ReplacementGroupDetail
         :group="group"
-        @applied="applied"
         @remove="remove"
+        @applied="applied"
         v-model="activeReplacement"
       />
     </div>
@@ -25,25 +25,13 @@ export default {
   data() {
     return {
       activeReplacement: null,
+      groups: new Map(),
     };
-  },
-  computed: {
-    replacementGroups() {
-      const groups = {};
-      for (const replacement of this.replacements) {
-        if (!(replacement.grouping() in groups)) {
-          groups[replacement.grouping()] = [];
-        }
-        groups[replacement.grouping()].push(replacement);
-      }
-
-      return Object.values(groups).map((replacements) => new ReplacementGroup(replacements));
-    }
   },
   methods: {
     newReplacement() {
       const selection = window.getSelection();
-      const contentRoot = document.querySelector('#content-root');
+      const contentRoot = this.getContentRoot();
 
       if (selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -51,26 +39,63 @@ export default {
           // TODO: is it within the document?
           range.toString();
 
-          const replacement = new Replacement(range.toString(), range.toString(), rangeToTarget(range, contentRoot));
+          const replacement = new Replacement(contentRoot, range.toString(), range.toString(), rangeToTarget(range, contentRoot));
           this.replacements.push(replacement);
+          this.updateGroups();
         }
       }
     },
     remove (replacement) {
-      this.replacements.splice(this.replacements.indexOf(replacement), 1);
+      const ix = this.replacements.indexOf(replacement);
+      if (ix > -1) {
+        this.replacements.splice(ix, 1);
+        this.updateGroups();
+      }
     },
     applied (replacement) {
-      // find other possibilities
-      const root = document.querySelector('#content-root');
-      for (const range of replacement.find(root)) {
-        this.replacements.push(
-          new Replacement(
-            range.toString(),
-            replacement.newText,
-            rangeToTarget(range, root)
-          )
-        );
+      if (replacement.suggestion) {
+        replacement.suggestion = false;
+        this.replacements.push(replacement);
       }
+      this.updateGroups();
+    },
+    updateGroups () {
+      const newGroups = new Map();
+
+      // group by the grouping function
+      for (const replacement of this.replacements) {
+        if (!newGroups.has(replacement.grouping())) {
+          newGroups.set(replacement.grouping(), []);
+        }
+        newGroups.get(replacement.grouping()).push(replacement);
+      }
+
+      // map into group objects
+      for (const [key, replacements] of newGroups) {
+        if (this.groups.has(key)) {
+          const group = this.groups.get(key);
+          group.replace(replacements);
+        } else {
+          this.groups.set(key, new ReplacementGroup(replacements));
+        }
+      }
+
+      // delete groups that are all suggestions or deleted
+      for (const [key, group] of this.groups) {
+        if (!newGroups.has(key) || group.replacements.length === 0) {
+          for (const replacement of group.suggestions) {
+            replacement.unmark();
+          }
+          this.groups.delete(key);
+        }
+      }
+
+      for (const group of this.groups.values()) {
+        group.populateSuggestions();
+      }
+    },
+    getContentRoot () {
+      return document.querySelector('#content-root');
     }
   }
 }

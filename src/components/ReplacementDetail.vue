@@ -3,15 +3,16 @@
     <div v-html="replacement.snippet()" class="mb-1" />
     <div class="d-flex">
       <input type="text" v-model="newText" class="form-control me-auto" />
-      <button class="btn btn-success ms-2" @click="apply" v-if="dirty"><i class="bi bi-check"></i></button>
-      <button class="btn btn-danger ms-2 " @click="discard"><i class="bi bi-trash"></i></button>
+      <button class="btn btn-success ms-2" @click="apply" :disabled="!dirty" title="Apply"><i class="bi bi-check"></i></button>
+      <button class="btn btn-success ms-2" @click="unapply" :disabled="!replacement.applied" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+      <button class="btn btn-danger ms-2 " @click="discard" v-if="!replacement.suggestion"><i class="bi bi-trash"></i></button>
     </div>
   </li>
 </template>
 
 <script>
 export default {
-  emits: ['remove', 'applied'],
+  emits: ['remove', 'applied', 'unapplied'],
   props: ['replacement', 'active'],
   data (self) {
     return {
@@ -35,17 +36,22 @@ export default {
   methods: {
     apply() {
       this.replacement.newText = this.newText;
-      this.replacement.apply(this.getContentRoot());
+      this.replacement.apply();
       this.mark();
       this.$emit('applied', this.replacement);
     },
+    unapply() {
+      this.replacement.unapply();
+      this.mark();
+      this.$emit('unapplied', this.replacement);
+    },
     discard() {
       this.replacement.unmark();
-      this.replacement.unapply(this.getContentRoot());
+      this.replacement.unapply();
       this.$emit('remove', this.replacement);
     },
     mark() {
-      this.replacement.mark(this.getContentRoot());
+      this.replacement.mark();
       for (const mark of this.replacement.marks) {
         mark.addEventListener('click', () => {
           this.markClicked();
@@ -59,7 +65,9 @@ export default {
     },
     clicked () {
       this.activateMarks();
-      this.replacement.marks[0].scrollIntoView({ behavior: "smooth" });
+      if (this.replacement.marks.length) {
+        this.replacement.marks[0].scrollIntoView({behavior: "smooth"});
+      }
       this.$emit('activated', this.replacement);
     },
     activateMarks() {

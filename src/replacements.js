@@ -1,35 +1,42 @@
 import {rangeToTarget, targetToRange} from "@lawsafrica/indigo-akn/dist/ranges";
 import { getTextNodes } from "@lawsafrica/indigo-akn/dist/ranges";
 
+let counter = 0;
+
 export class Replacement {
-  constructor (oldText, newText, target) {
+  constructor (root, oldText, newText, target, suggestion) {
+    this.id = counter++;
+    this.root = root;
     this.oldText = oldText;
     this.newText = newText;
     this.target = target;
     this.applied = false;
+    this.suggestion = suggestion;
     this.marks = [];
   }
 
-  apply (root) {
-    const range = this.toRange(root);
-    if (range) {
-      this.target = rangeToTarget(this.replaceWithText(range, this.newText), root);
-      this.applied = true;
+  apply () {
+    if (!this.applied) {
+      const range = this.toRange();
+      if (range) {
+        this.target = rangeToTarget(this.replaceWithText(range, this.newText), this.root);
+        this.applied = true;
+      }
     }
   }
 
-  unapply (root) {
+  unapply () {
     if (this.applied) {
-      const range = this.toRange(root);
+      const range = this.toRange();
       if (range) {
-        this.target = rangeToTarget(this.replaceWithText(range, this.oldText), root);
+        this.target = rangeToTarget(this.replaceWithText(range, this.oldText), this.root);
         this.applied = false;
       }
     }
   }
 
-  toRange (root) {
-    return targetToRange(this.target, root);
+  toRange () {
+    return targetToRange(this.target, this.root);
   }
 
   replaceWithText(range, text) {
@@ -44,10 +51,10 @@ export class Replacement {
     return newRange;
   }
 
-  mark (contentRoot) {
-    this.unmark(contentRoot);
+  mark () {
+    this.unmark();
 
-    const range = this.toRange(contentRoot);
+    const range = this.toRange();
 
     for (const textNode of getTextNodes(range)) {
       if (textNode.parentElement) {
@@ -72,13 +79,65 @@ export class Replacement {
     this.marks = [];
   }
 
+  snippet () {
+    const sel = this.target.selectors.find((s) => s.type === 'TextQuoteSelector');
+    const len = 15;
+
+    if (sel) {
+      return `... ${sel.prefix.slice(-len)}<mark>${sel.exact}</mark>${sel.suffix.slice(0, len)} ...`;
+    } else {
+      return this.oldtext;
+    }
+  }
+
+  grouping () {
+    return this.oldText + " → " + this.newText;
+  }
+}
+
+export class ReplacementGroup {
+  constructor (replacements) {
+    this.key = replacements[0].grouping();
+    this.title = this.key;
+    this.replacements = replacements;
+    this.suggestions = [];
+  }
+
+  replace (replacements) {
+    this.replacements.splice(0, this.replacements.length);
+    this.replacements.push(...replacements);
+  }
+
+  populateSuggestions () {
+    // remove old suggestions, calling unmark() on them before doing so
+    for (const replacement of this.suggestions) {
+      replacement.unmark();
+    }
+
+    this.suggestions.splice(0, this.suggestions.length);
+
+    if (this.replacements.length > 0) {
+      const first = this.replacements[0];
+
+      for (const range of this.findSuggestions(first.root, first.oldText)) {
+        const replacement = new Replacement(
+          first.root,
+          range.toString(),
+          first.newText,
+          rangeToTarget(range, first.root),
+          true,
+        );
+        this.suggestions.push(replacement);
+      }
+    }
+  }
+
   /**
    * Find possible occurrences of this range in the root element, ignoring anything in <mark> tags
-   * @param root Element
    * @returns array of Range objects
    */
-  find (root) {
-    let text = this.oldText;
+  findSuggestions (root, oldText) {
+    let text = oldText;
 
     if (!RegExp.escape) {
       text = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -92,39 +151,22 @@ export class Replacement {
 
     while (walker.nextNode()) {
       let node = walker.currentNode;
+
+      // ignore text in marks
+      if (node.parentElement.closest('mark')) {
+        continue;
+      }
+
       let text = node.textContent;
 
       for (const match of [...text.matchAll(regex)]) {
         const range = document.createRange();
         range.setStart(node, match.index);
-        range.setEnd(node, match.index + this.oldText.length);
+        range.setEnd(node, match.index + oldText.length);
         matches.push(range);
       }
     }
 
     return matches;
-  }
-
-  snippet () {
-    const sel = this.target.selectors.find((s) => s.type === 'TextQuoteSelector');
-    const len = 15;
-
-    if (sel) {
-      return `... ${sel.prefix.slice(-len)}<mark>${sel.exact}</mark>${sel.suffix.slice(0, len)} ...`;
-    } else {
-      return this.oldtext;
-    }
-  }
-
-  grouping () {
-    return this.oldText + " -> " + this.newText;
-  }
-}
-
-export class ReplacementGroup {
-  constructor (replacements) {
-    this.key = replacements[0].grouping();
-    this.title = this.key;
-    this.replacements = replacements;
   }
 }
