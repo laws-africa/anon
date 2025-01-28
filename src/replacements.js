@@ -40,9 +40,15 @@ export class Replacement {
   }
 
   replaceWithText(range, text) {
-    range.deleteContents();
     const node = document.createTextNode(text);
+
+    // insert the text at the start of the range, rather than deleting the contents and then inserting it, which
+    // puts the text at the "end" which may be on a new line (i.e. past the end of the element)
     range.insertNode(node);
+    range.setStartAfter(node);
+    range.deleteContents();
+
+    node.parentElement.normalize();
 
     const newRange = document.createRange();
     newRange.setStartBefore(node);
