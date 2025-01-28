@@ -141,11 +141,16 @@ export class ReplacementGroup {
     const ranges = [];
     const marks = [];
 
-    marker.mark(text, {
-      accuracy: "exactly",
-      ignoreJoiners: true,
+    if (!RegExp.escape) {
+      text = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    } else {
+      text = RegExp.escape(text);
+    }
+
+    const re = new RegExp('\\b' + text + '\\b', 'g');
+
+    marker.markRegExp(re, {
       acrossElements: true,
-      separateWordSearch: false,
       exclude: ["mark"],
       each: (mark) => {
         marks.push(mark);
