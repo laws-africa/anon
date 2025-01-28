@@ -1,5 +1,6 @@
 import {rangeToTarget, targetToRange} from "@lawsafrica/indigo-akn/dist/ranges";
 import { getTextNodes } from "@lawsafrica/indigo-akn/dist/ranges";
+import Mark from "mark.js";
 
 let counter = 0;
 
@@ -76,11 +77,7 @@ export class Replacement {
 
   unmark () {
     for (const mark of this.marks) {
-      const parent = mark.parentElement;
-      while (parent && mark.firstChild) {
-        parent.insertBefore(mark.firstChild, mark);
-      }
-      mark.remove();
+      unwrap(mark);
     }
     this.marks = [];
   }
@@ -139,35 +136,61 @@ export class ReplacementGroup {
    */
   findSuggestions (root, oldText) {
     let text = oldText;
+    let marker = new Mark(root);
 
-    if (!RegExp.escape) {
-      text = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    } else {
-      text = RegExp.escape(text);
-    }
+    const ranges = [];
+    const marks = [];
 
-    const regex = new RegExp('\\b' + text + '\\b', 'g');
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-    let matches = [];
+    marker.mark(text, {
+      accuracy: "exactly",
+      ignoreJoiners: true,
+      acrossElements: true,
+      separateWordSearch: false,
+      exclude: ["mark"],
+      each: (mark) => {
+        marks.push(mark);
+      }
+    });
 
-    while (walker.nextNode()) {
-      let node = walker.currentNode;
+    // combine adjacent marks that don't have the whole text
+    let range;
+    for (let i = 0; i < marks.length; i++) {
+      const mark = marks[i];
 
-      // ignore text in marks
-      if (node.parentElement.closest('mark')) {
+      if (range && range.toString().length < text.length) {
+        // combine with existing range
+        range.setEndAfter(mark);
+        unwrap(mark);
         continue;
       }
 
-      let text = node.textContent;
-
-      for (const match of [...text.matchAll(regex)]) {
-        const range = document.createRange();
-        range.setStart(node, match.index);
-        range.setEnd(node, match.index + oldText.length);
-        matches.push(range);
+      if (range && range.toString().length >= text.length) {
+        // we have a complete range
+        ranges.push(range);
+        range = null;
       }
+
+      if (!range) {
+        range = document.createRange();
+        range.setStartBefore(mark);
+        range.setEndAfter(mark);
+      }
+
+      unwrap(mark);
     }
 
-    return matches;
+    if (range) {
+      ranges.push(range);
+    }
+
+    return ranges;
   }
+}
+
+export function unwrap(el) {
+  const parent = el.parentElement;
+  while (parent && el.firstChild) {
+    parent.insertBefore(el.firstChild, el);
+  }
+  el.remove();
 }

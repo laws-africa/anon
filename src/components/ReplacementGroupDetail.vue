@@ -46,7 +46,7 @@ export default {
   },
   computed: {
     canApply () {
-      return this.group.replacements.some(r => !r.applied) || this.group.suggestions.length > 0;
+      return (this.group.replacements[0].oldText !== this.group.replacements[0].newText) && (this.group.replacements.some(r => !r.applied) || this.group.suggestions.length > 0);
     },
     canUnapply () {
       return this.group.replacements.some(r => r.applied);
