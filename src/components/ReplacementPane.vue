@@ -48,17 +48,19 @@ export default {
         }
       }
     },
-    remove (replacement) {
-      const ix = this.replacements.indexOf(replacement);
-      if (ix > -1) {
-        this.replacements.splice(ix, 1);
-        this.$nextTick(() => this.updateGroups());
-      }
-    },
     applied (replacement) {
       if (replacement.suggestion) {
         replacement.suggestion = false;
         this.replacements.push(replacement);
+      }
+      this.$nextTick(() => this.updateGroups());
+    },
+    remove (group) {
+      for (const replacement of group.replacements) {
+        const ix = this.replacements.indexOf(replacement);
+        if (ix > -1) {
+          this.replacements.splice(ix, 1);
+        }
       }
       this.$nextTick(() => this.updateGroups());
     },

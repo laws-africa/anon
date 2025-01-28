@@ -8,14 +8,14 @@
         <span class="ms-2 badge text-bg-secondary">{{nApplied}} / {{group.replacements.length + group.suggestions.length}}</span>
       </h6>
       <button class="btn btn-success ms-auto" @click="apply" :disabled="!canApply" title="Apply"><i class="bi bi-check"></i></button>
-      <button class="btn btn-success ms-2" @click="unapply" :disabled="!canUnapply" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+      <button class="btn btn-warning ms-2" @click="unapply" :disabled="!canUnapply" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+      <button class="btn btn-danger ms-2 " @click="remove"><i class="bi bi-trash"></i></button>
     </div>
     <ul :class="`list-group list-group-flush replacement-group-items ${collapsed ? 'd-none' : ''}`">
       <template v-for="replacement of group.replacements" :key="replacement.id">
         <ReplacementDetail
           :replacement="replacement"
           :active="replacement === modelValue"
-          @remove="removed"
           @applied="applied"
           @activated="$emit('update:modelValue', replacement)"
         />
@@ -24,7 +24,6 @@
         <ReplacementDetail
           :replacement="replacement"
           :active="replacement === modelValue"
-          @remove="removed"
           @applied="applied"
           @activated="$emit('update:modelValue', replacement)"
         />
@@ -76,8 +75,18 @@ export default {
     applied (replacement) {
       this.$emit('applied', replacement);
     },
-    removed (replacement) {
-      this.$emit('remove', replacement);
+    remove () {
+      if (this.group.replacements.some(r => r.applied) && !confirm("Are you sure?")) {
+        return;
+      }
+
+      const replacements = this.group.replacements.concat(this.group.suggestions);
+      for (const replacement of replacements) {
+        replacement.unmark();
+        replacement.unapply();
+        this.$emit('unapplied', replacement);
+      }
+      this.$emit('remove', this.group);
     },
     toggle () {
       this.collapsed = !this.collapsed;

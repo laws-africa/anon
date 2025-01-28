@@ -4,15 +4,14 @@
     <div class="d-flex">
       <input type="text" v-model="newText" class="form-control me-auto" />
       <button class="btn btn-success ms-2" @click="apply" :disabled="!dirty" title="Apply"><i class="bi bi-check"></i></button>
-      <button class="btn btn-success ms-2" @click="unapply" :disabled="!replacement.applied" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
-      <button class="btn btn-danger ms-2 " @click="discard" v-if="!replacement.suggestion"><i class="bi bi-trash"></i></button>
+      <button class="btn btn-warning ms-2" @click="unapply" :disabled="!replacement.applied" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
     </div>
   </li>
 </template>
 
 <script>
 export default {
-  emits: ['remove', 'applied', 'unapplied'],
+  emits: ['applied', 'unapplied'],
   props: ['replacement', 'active'],
   data (self) {
     return {
@@ -53,11 +52,6 @@ export default {
       this.replacement.unapply();
       this.replacement.mark();
       this.$emit('unapplied', this.replacement);
-    },
-    discard() {
-      this.replacement.unmark();
-      this.replacement.unapply();
-      this.$emit('remove', this.replacement);
     },
     markClicked() {
       this.activateMarks();
