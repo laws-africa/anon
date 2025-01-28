@@ -52,7 +52,7 @@ export default {
       const ix = this.replacements.indexOf(replacement);
       if (ix > -1) {
         this.replacements.splice(ix, 1);
-        this.updateGroups();
+        this.$nextTick(() => this.updateGroups());
       }
     },
     applied (replacement) {
@@ -60,7 +60,7 @@ export default {
         replacement.suggestion = false;
         this.replacements.push(replacement);
       }
-      this.updateGroups();
+      this.$nextTick(() => this.updateGroups());
     },
     updateGroups () {
       const newGroups = new Map();
@@ -77,7 +77,7 @@ export default {
       for (const [key, replacements] of newGroups) {
         if (this.groups.has(key)) {
           const group = this.groups.get(key);
-          group.replace(replacements);
+          group.replacements = replacements;
         } else {
           this.groups.set(key, new ReplacementGroup(replacements));
         }

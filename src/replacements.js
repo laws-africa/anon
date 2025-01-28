@@ -103,11 +103,6 @@ export class ReplacementGroup {
     this.suggestions = [];
   }
 
-  replace (replacements) {
-    this.replacements.splice(0, this.replacements.length);
-    this.replacements.push(...replacements);
-  }
-
   populateSuggestions () {
     // remove old suggestions, calling unmark() on them before doing so
     for (const replacement of this.suggestions) {
