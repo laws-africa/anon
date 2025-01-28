@@ -35,16 +35,14 @@ export default {
 
       if (selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        if (!range.collapsed) {
-          // TODO: is it within the document?
-          range.toString();
-
+        if (!range.collapsed && contentRoot.contains(range.commonAncestorContainer)) {
           const replacement = new Replacement(contentRoot, range.toString(), range.toString(), rangeToTarget(range, contentRoot));
           // ensure there are marks before new suggestions are searched
           replacement.mark();
           this.replacements.push(replacement);
           this.updateGroups();
           this.activeReplacement = replacement;
+          selection.empty();
         }
       }
     },

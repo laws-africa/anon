@@ -48,11 +48,11 @@ export class Replacement {
     range.setStartAfter(node);
     range.deleteContents();
 
-    node.parentElement.normalize();
-
     const newRange = document.createRange();
     newRange.setStartBefore(node);
     newRange.setEndAfter(node);
+
+    node.parentElement.normalize();
 
     return newRange;
   }
